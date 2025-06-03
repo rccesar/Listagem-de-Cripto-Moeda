@@ -1,4 +1,5 @@
 import 'package:busca_crypto/components/lista.dart';
+import 'package:busca_crypto/requisicoes/coin_base.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -29,12 +30,9 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
- 
   void _onItemTapped(int index) {
-    setState(() {
-    });
+    setState(() {});
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -45,15 +43,12 @@ class _MyHomePageState extends State<MyHomePage> {
         centerTitle: true,
       ),
 
-      body: const CryptoList(), 
+      body: const RequestCoin(),
 
       bottomNavigationBar: BottomNavigationBar(
         onTap: _onItemTapped,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Início',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Início'),
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite),
             label: 'Favoritos',

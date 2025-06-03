@@ -1,62 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
+import 'package:busca_crypto/requisicoes/coin_base.dart'; // Certifique-se que o Coin está aqui.
 
-class CryptoList extends StatefulWidget {
-  const CryptoList({super.key});
+class CryptoList extends StatelessWidget {
+  final List<Coin> cryptos;
+  final Future<void> Function()? onRefresh;
 
-  @override
-  State<CryptoList> createState() => _CryptoListState();
-}
-
-class _CryptoListState extends State<CryptoList> {
-  List<Coin> _cryptos = [];
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchCryptos();
-  }
-
-  Future<void> _fetchCryptos() async {
-    const url = 'https://api.coinbase.com/v2/assets/search?base=BRL';
-    final dio = Dio();
-
-    try {
-      final response = await dio.get(url);
-      if (response.statusCode == 200) {
-        final data = response.data['data'] as List;
-        setState(() {
-          _cryptos = data.map((coinJson) => Coin.fromJson(coinJson)).toList();
-          _isLoading = false;
-        });
-      } else {
-        throw Exception('Falha ao carregar moedas');
-      }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      debugPrint('Erro ao buscar moedas: $e');
-    }
-  }
-
-  Future<void> _refreshList() async {
-    await _fetchCryptos();
-  }
+  const CryptoList({super.key, required this.cryptos, this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     return RefreshIndicator(
-      onRefresh: _refreshList,
+      onRefresh: onRefresh ?? () async {},
       child: ListView.builder(
-        itemCount: _cryptos.length,
+        itemCount: cryptos.length,
         itemBuilder: (context, index) {
-          final crypto = _cryptos[index];
+          final crypto = cryptos[index];
           return ListTile(
             leading: CircleAvatar(
               backgroundImage: NetworkImage(crypto.imageUrl),
@@ -67,30 +25,6 @@ class _CryptoListState extends State<CryptoList> {
           );
         },
       ),
-    );
-  }
-}
-
-// Modelo Coin
-class Coin {
-  final String name;
-  final String symbol;
-  final String imageUrl;
-  final String latestPrice;
-
-  Coin({
-    required this.name,
-    required this.symbol,
-    required this.imageUrl,
-    required this.latestPrice,
-  });
-
-  factory Coin.fromJson(Map<String, dynamic> json) {
-    return Coin(
-      name: json['name'] ?? 'Desconhecido',
-      symbol: json['symbol'] ?? '',
-      imageUrl: json['image_url'] ?? '',
-      latestPrice: json['latest_price']?['amount']?['amount'] ?? '0',
     );
   }
 }
