@@ -2,14 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart'; // Pacote Dio para requisições HTTP
 
 class RequestCoin extends StatefulWidget {
-  const RequestCoin({super.key});
+  const RequestCoin({
+    super.key,
+    required String searchQuery,
+    required bool showSearchBar,
+    required void Function(String query) onSearchChanged,
+  });
 
   @override
   State<RequestCoin> createState() => _RequestCoinState();
 }
 
 class _RequestCoinState extends State<RequestCoin> {
+  final TextEditingController _searchController = TextEditingController();
   late Future<List<Coin>> _futureCoins;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -17,8 +24,12 @@ class _RequestCoinState extends State<RequestCoin> {
     _futureCoins = fetchCoins();
   }
 
-  Future<List<Coin>> fetchCoins() async {
-    const url = 'https://api.coinbase.com/v2/assets/search?base=BRL';
+  Future<List<Coin>> fetchCoins([String query = '']) async {
+    String url = 'https://api.coinbase.com/v2/assets/search?base=BRL';
+    if (query.isNotEmpty) {
+      url += '&query=$query'; // Ajuste o nome do parâmetro se necessário
+    }
+
     final dio = Dio();
 
     try {
@@ -38,42 +49,73 @@ class _RequestCoinState extends State<RequestCoin> {
     }
   }
 
+  void _onSearchChanged(String value) {
+    setState(() {
+      _searchQuery = value;
+      _futureCoins = fetchCoins(_searchQuery);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Coin>>(
-      future: _futureCoins,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Erro: ${snapshot.error}'));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text('Nenhuma moeda encontrada'));
-        } else {
-          final coins = snapshot.data!;
-          return RefreshIndicator(
-            onRefresh: () async {
-              setState(() {
-                _futureCoins = fetchCoins();
-              });
-            },
-            child: ListView.builder(
-              itemCount: coins.length,
-              itemBuilder: (context, index) {
-                final coin = coins[index];
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: NetworkImage(coin.imageUrl),
-                  ),
-                  title: Text(coin.name),
-                  subtitle: Text(coin.symbol),
-                  trailing: Text('R\$ ${coin.latestPrice}'),
-                );
-              },
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              labelText: 'Buscar Moeda...',
+              border: const OutlineInputBorder(),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: () {
+                  _searchController.clear();
+                  _onSearchChanged('');
+                },
+              ),
             ),
-          );
-        }
-      },
+            onChanged: _onSearchChanged,
+          ),
+        ),
+        Expanded(
+          child: FutureBuilder<List<Coin>>(
+            future: _futureCoins,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Erro: ${snapshot.error}'));
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Center(child: Text('Nenhuma moeda encontrada'));
+              } else {
+                final coins = snapshot.data!;
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    setState(() {
+                      _futureCoins = fetchCoins(_searchQuery);
+                    });
+                  },
+                  child: ListView.builder(
+                    itemCount: coins.length,
+                    itemBuilder: (context, index) {
+                      final coin = coins[index];
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundImage: NetworkImage(coin.imageUrl),
+                        ),
+                        title: Text(coin.name),
+                        subtitle: Text(coin.symbol),
+                        trailing: Text('R\$ ${coin.latestPrice}'),
+                      );
+                    },
+                  ),
+                );
+              }
+            },
+          ),
+        ),
+      ],
     );
   }
 }

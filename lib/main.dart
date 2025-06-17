@@ -1,4 +1,3 @@
-import 'package:busca_crypto/components/lista.dart';
 import 'package:busca_crypto/requisicoes/coin_base.dart';
 import 'package:flutter/material.dart';
 
@@ -30,8 +29,13 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  void _onItemTapped(int index) {
-    setState(() {});
+  String _searchQuery = '';
+  bool _showSearchBar = false;
+
+  void _onSearchChanged(String query) {
+    setState(() {
+      _searchQuery = query;
+    });
   }
 
   @override
@@ -42,11 +46,16 @@ class _MyHomePageState extends State<MyHomePage> {
         title: const Text('Cripto Moedas'),
         centerTitle: true,
       ),
-
-      body: const RequestCoin(),
+      body: RequestCoin(
+        searchQuery: _searchQuery,
+        showSearchBar: _showSearchBar,
+        onSearchChanged: _onSearchChanged,
+      ),
 
       bottomNavigationBar: BottomNavigationBar(
-        onTap: _onItemTapped,
+        onTap: (index) {
+          setState(() {});
+        },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Início'),
           BottomNavigationBarItem(
